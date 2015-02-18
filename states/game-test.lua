@@ -1,23 +1,17 @@
 gamestate	= require "libs.hump.gamestate"
 
-
+function aabb_collision2(x1, y1, w1, h1, x2, y2, w2, h2)
+	if  (x1 + w1 >= x2) and (x1 <= x2 + w2) and
+		(y1 + h1 >= y2) and (y1 <= y2 + h2) then
+		return true
+	end
+	return false
+end
 function aabb_collision( aX, aY, aW, aH, bX, bY, bW, bH ) 
   return aX < bX+bW and
 		 bX < aX+aW and
 		 aY < bY+bH and
 		 bY < aY+aH
-end
-function aabb_right( aX, aY, aW, aH, bX, bY, bW, bH ) 
-	return bX < aX + aW 
-end
-function aabb_left( aX, aY, aW, aH, bX, bY, bW, bH ) 
-	return aX < bX + bW
-end
-function aabb_top( aX, aY, aW, aH, bX, bY, bW, bH ) 
-	return aY < bY + bH
-end
-function aabb_bottom( aX, aY, aW, aH, bX, bY, bW, bH ) 
-	return bY < aY + aH
 end
 
 local state = {}
@@ -31,18 +25,27 @@ function state:enter(state)
 	for i=1,SCREEN_WIDTH/tile_width do
 		self.floors[#self.floors+1] = { x=(i-1) * tile_width, y=480, width=tile_width, height=tile_height }
 	end
+		for i=1,SCREEN_WIDTH/tile_width do
+		self.floors[#self.floors+1] = { x=(i-1) * tile_width, y=320, width=tile_width, height=tile_height }
+	end
 	for i=1,SCREEN_CENTER_X/tile_width do
 		self.floors[#self.floors+1] = { x=(SCREEN_CENTER_X) + (i-1) * tile_width, y=480-tile_height, width=tile_width, height=tile_height }
 	end
+	for i=1,SCREEN_CENTER_X/tile_width - 4 do
+		self.floors[#self.floors+1] = { x=(i-1) * tile_width, y=480-tile_height, width=tile_width, height=tile_height }
+	end
 	--
 	self.dude = {}
-	self.dude.x, self.dude.y = SCREEN_CENTER_X, SCREEN_CENTER_Y-80
+	self.dude.x, self.dude.y = SCREEN_CENTER_X-32, SCREEN_CENTER_Y+96
+	self.dude.isColliding = false
 	self.dude._intersectX = 0
 	self.dude._intersectY = 0
 	self.dude.mask = { width = 32, height = 64 }
 	-- sensors; 10x32
 	self.dude.sensors = {
+		ceiling = {x=-16,y=-68,width=32,height=4},
 		floor = {x=-16,y=0,width=32,height=4},
+		left = {x=-16,y=-56,width=-4,height=48},
 		right = {x=16,y=-56,width=4,height=48},
 	}
 	self.dude.xspeed = 0
@@ -66,44 +69,52 @@ end
 function state:update(dt)
 	self.uptime = self.uptime + dt
 	self.dt = dt
+	
+	self.dude.x = self.dude.x + self.dude.xspeed
+	self.dude.y = self.dude.y + self.dude.yspeed
 
 	--
 	self.dude.onground = false
-	local pX, pY, pW, pH = self.dude.x - self.dude.mask.width/2, self.dude.y - self.dude.mask.height, self.dude.mask.width, self.dude.mask.height
+	self.dude.isColliding = false
+	local pX, pY = self.dude.x, self.dude.y
 	for i, tile in ipairs( self.floors ) do
 		local tX, tY, tW, tH = tile.x, tile.y, tile.width, tile.height
-		if aabb_collision( pX, pY, pW, pH, tX, tY, tW, tH ) then
-			local y_intersection = tile.y - (pY + pH)
-			local x_intersection = tile.x - (pX + pW)
-			
-			self.dude._intersectX = x_intersection
-			self.dude._intersectY = y_intersection
-
-			--[[
-			if aabb_left( pX, pY, pW, pH, tX, tY, tW, tH ) and x_intersection < 0 then
-				self.dude.x = (tX + tW) + pW/2
-				self.dude.xspeed = 0
+		local x_dist, y_dist = tX - pX, tY - pY
+		if (math.abs(x_dist) < 64) and (math.abs(y_dist) < 64) then
+			if aabb_collision( pX - self.dude.mask.width/2, pY - self.dude.mask.height , self.dude.mask.width, self.dude.mask.height, tX, tY, tW, tH ) then
+				self.dude.isColliding = true
+				local xint, yint = tX - pX, tY - pY
+				local top_intersection = (tY + tH) - (pY - self.dude.mask.height)
+				local right_intersection = tX - ((pX - self.dude.mask.width/2) + self.dude.mask.width)
+				local left_intersection = tX - pX
+				local time_x, time_y = self.dude.xspeed, self.dude.yspeed
+				
+				if aabb_collision( pX + self.dude.sensors.ceiling.x, pY - 32, self.dude.sensors.ceiling.width, 12, tX, tY, tW, tH) then
+					print("TOP COLLISION")
+					self.dude.y = (tY + tH) + self.dude.mask.height
+					self.dude.yspeed = 0
+				end
+				if yint < 0 and aabb_collision( pX + self.dude.sensors.floor.x, pY + self.dude.sensors.floor.y, self.dude.sensors.floor.width, self.dude.sensors.floor.height, tX, tY, tW, tH) then
+					print("BOT COLLISION")
+					self.dude.y = tY
+					self.dude.yspeed = 0
+					self.dude.onground = true
+				end
+				if xint < 0 and aabb_collision( pX + self.dude.sensors.left.x, pY + self.dude.sensors.left.y, self.dude.sensors.left.width, self.dude.sensors.left.height, tX, tY, tW, tH) then
+					print("LEFT SIDE COLLISION")
+					self.dude.x = tX + ( self.dude.mask.width * 1.5 ) 
+					self.dude.xspeed = 0
+				end
+				if right_intersection < 0 and aabb_collision( pX + self.dude.sensors.right.x, pY + self.dude.sensors.right.y, self.dude.sensors.right.width, self.dude.sensors.right.height, tX, tY, tW, tH) then
+					print("RIGHT SIDE COLLISION")
+					self.dude.x = tX - self.dude.mask.width/2
+					self.dude.xspeed = 0
+				end
+				
 			end
-			if aabb_right( pX, pY, pW, pH, tX, tY, tW, tH ) and x_intersection > 0 then
-				self.dude.x = tX - pW/2
-				self.dude.xspeed = 0
-			end
-			]]
-			
-			if aabb_bottom( pX, pY, pW, pH, tX, tY, tW, tH ) and y_intersection < 0 then
-				self.dude.y = tY
-				self.dude.yspeed = 0
-				self.dude.onground = true
-			end
-			--[[
-			if aabb_top( pX, pY, pW, pH, tX, tY, tW, tH ) and y_intersection > 0 then
-				self.dude.y = (tY + tH)
-				self.dude.yspeed = 0
-			end
-			]]
 		end
 	end
-
+		
 	-- On The Ground
 	if self.dude.onground then
 		if love.keyboard.isDown( 'up' ) then
@@ -154,8 +165,6 @@ function state:update(dt)
 		
 	end
 
-	self.dude.x = self.dude.x + self.dude.xspeed
-	self.dude.y = self.dude.y + self.dude.yspeed
 end
 
 function state:draw()
@@ -163,15 +172,16 @@ function state:draw()
 	for i, tile in ipairs(self.floors) do
 		love.graphics.setColor(32,32,32)
 		love.graphics.rectangle( "fill", tile.x, tile.y, tile.width, tile.height )
+		love.graphics.setColor(64,64,64)
+		love.graphics.rectangle( "line", tile.x, tile.y, tile.width, tile.height )
 	end
 	
-	love.graphics.print(string.format("%02.2f",self.uptime),
-						 SCREEN_LEFT + 0, SCREEN_TOP + 0, 0
-						 )
 	-- Mask
 	love.graphics.setColor(255,255,255,32)
+	if self.dude.isColliding then love.graphics.setColor(255,32,32,32) end
 	love.graphics.rectangle( "fill", self.dude.x - self.dude.mask.width/2, self.dude.y - self.dude.mask.height, self.dude.mask.width, self.dude.mask.height )
 	love.graphics.setColor(255,255,255)
+	if self.dude.isColliding then love.graphics.setColor(255,32,32) end
 	love.graphics.rectangle( "line", self.dude.x - self.dude.mask.width/2, self.dude.y - self.dude.mask.height, self.dude.mask.width, self.dude.mask.height )
 
 	-- Point
@@ -180,10 +190,8 @@ function state:draw()
 	
 	-- Individual Sensors
 	for i, sensor in pairs(self.dude.sensors) do
-		love.graphics.setColor(128,0,255,32)
+		love.graphics.setColor(128,0,255,255)
 		love.graphics.rectangle( "fill", self.dude.x + sensor.x, self.dude.y + sensor.y, sensor.width, sensor.height )
-		love.graphics.setColor(128,0,255)
-		love.graphics.rectangle( "line", self.dude.x + sensor.x, self.dude.y + sensor.y, sensor.width, sensor.height )
 	end
 
 	-- Debug
