@@ -30,6 +30,7 @@ function love.load()
 	SCREEN_HEIGHT = love.graphics.getHeight()
 	--
 	love.graphics.setBackgroundColor(0,0,0)
+	love.physics.setMeter(32)
 	--
 	content.fonts["normal"] = love.graphics.newFont("data/fonts/OpenSans-Semibold.ttf",16)
 	love.graphics.setFont(content.fonts["normal"])

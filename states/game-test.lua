@@ -1,4 +1,5 @@
 gamestate	= require "libs.hump.gamestate"
+sti = require "libs.simple-tiled-implementation"
 
 function aabb_collision2(x1, y1, w1, h1, x2, y2, w2, h2)
 	if  (x1 + w1 >= x2) and (x1 <= x2 + w2) and
@@ -45,6 +46,9 @@ end
 local state = {}
 function state:enter(state)
 	love.graphics.setBackgroundColor(0,0,0)
+	self.map = sti.new("data/maps/00")
+	self._world = love.physics.newWorld(0,0)
+	self.mapCollisions = self.map:initWorldCollision(self._world)
 	self.uptime = 0
 	--
 	self.floors = {}
@@ -96,72 +100,12 @@ function state:keyreleased(key, unicode)
 end
 
 function state:update(dt)
+	self.map:update(dt)
 	self.uptime = self.uptime + dt
 	self.dt = dt
 	
 	self.dude._prevX = self.dude.x
 	self.dude._prevY = self.dude.y
-	
-	self.dude.x = self.dude.x + self.dude.xspeed
-	self.dude.y = self.dude.y + self.dude.yspeed
-
-	--
-	self.dude.onground = false
-	self.dude.isColliding = false
-	local pX, pY = self.dude.x, self.dude.y
-	for i, tile in ipairs( self.floors ) do
-		local tX, tY, tW, tH = tile.x, tile.y, tile.width, tile.height
-		local x_dist, y_dist = tX - pX, tY - pY
-		if (math.abs(x_dist) < 64) and (math.abs(y_dist) < 128) then
-			if aabb_intersect( pX - self.dude.mask.width/2, pY - self.dude.mask.height , self.dude.mask.width, self.dude.mask.height, tX, tY, tW, tH ) then
-				local b, _x, _y = aabb_intersect( pX - self.dude.mask.width/2, pY - self.dude.mask.height , self.dude.mask.width, self.dude.mask.height, tX, tY, tW, tH )
-				self.dude._intersectX, self.dude._intersectY = _x, _y
-				print( string.format("%02.2f,%02.2f", _x, _y))
-				self.dude.isColliding = true
-				
-				if math.abs(_y) < math.abs(_x) then
-					if self.dude._prevY <= tY then
-						self.dude.onground = true
-					end
-					
-					self.dude.y = self.dude.y + _y
-				else
-					self.dude.x = self.dude.x + _x
-				end
-				
-				--[[
-				if aabb_collision( pX + self.dude.sensors.ceiling.x, pY + self.dude.sensors.ceiling.y, self.dude.sensors.ceiling.width, 12, tX, tY, tW, tH) then
-					--print("TOP COLLISION")
-					self.dude.y = (tY + tH) + self.dude.mask.height
-					self.dude.yspeed = 0
-				end
-				if yint < 0 and aabb_collision( pX + self.dude.sensors.floor.x, pY + self.dude.sensors.floor.y, self.dude.sensors.floor.width, self.dude.sensors.floor.height, tX, tY, tW, tH) then
-					--print("BOT COLLISION")
-					self.dude.y = tY
-					self.dude.yspeed = 0
-					self.dude.onground = true
-				end
-				if xint < 0 and aabb_collision( pX + self.dude.sensors.left.x, pY + self.dude.sensors.left.y, self.dude.sensors.left.width, self.dude.sensors.left.height, tX, tY, tW, tH) then
-					--print("LEFT SIDE COLLISION")
-					self.dude.x = tX + ( self.dude.mask.width * 1.5 ) 
-					self.dude.xspeed = 0
-				end
-				if right_intersection < 0 and aabb_collision( pX + self.dude.sensors.right.x, pY + self.dude.sensors.right.y, self.dude.sensors.right.width, self.dude.sensors.right.height, tX, tY, tW, tH) then
-					--print("RIGHT SIDE COLLISION")
-					self.dude.x = tX - self.dude.mask.width/2
-					self.dude.xspeed = 0
-				end
-				]]
-			end
-		end
-	end
-	
-	if self.dude._prevX == self.dude.x then
-		self.dude.xspeed = 0
-	end
-	if self.dude._prevY == self.dude.y then
-		self.dude.yspeed = 0
-	end
 		
 	-- On The Ground
 	if love.keyboard.isDown( 'up' ) then
@@ -210,12 +154,72 @@ function state:update(dt)
 	if not self.dude.onground then 
 		-- Apply Gravity
 		self.dude.yspeed = self.dude.yspeed + dt * GRAVITY
-		
 	end
+	
+	self.dude.x = self.dude.x + self.dude.xspeed
+	self.dude.y = self.dude.y + self.dude.yspeed
 
+	--
+	self.dude.onground = false
+	self.dude.isColliding = false
+	local pX, pY = self.dude.x, self.dude.y
+	for i, tile in ipairs( self.floors ) do
+		local tX, tY, tW, tH = tile.x, tile.y, tile.width, tile.height
+		local x_dist, y_dist = tX - pX, tY - pY
+		if (math.abs(x_dist) < 64) and (math.abs(y_dist) < 128) then
+			if aabb_intersect( pX - self.dude.mask.width/2, pY - self.dude.mask.height , self.dude.mask.width, self.dude.mask.height, tX, tY, tW, tH ) then
+				local b, _x, _y = aabb_intersect( pX - self.dude.mask.width/2, pY - self.dude.mask.height , self.dude.mask.width, self.dude.mask.height, tX, tY, tW, tH )
+				self.dude._intersectX, self.dude._intersectY = _x, _y
+				print( string.format("%02.2f,%02.2f", _x, _y))
+				self.dude.isColliding = true
+				
+				if math.abs(_y) < math.abs(_x) then
+					if self.dude._prevY >= tY then
+						self.dude.onground = true
+					end
+					
+					self.dude.y = math.floor( self.dude.y ) + _y
+				else
+					self.dude.x = math.floor( self.dude.x ) + _x
+				end
+				
+				--[[
+				if aabb_collision( pX + self.dude.sensors.ceiling.x, pY + self.dude.sensors.ceiling.y, self.dude.sensors.ceiling.width, 12, tX, tY, tW, tH) then
+					--print("TOP COLLISION")
+					self.dude.y = (tY + tH) + self.dude.mask.height
+					self.dude.yspeed = 0
+				end
+				if yint < 0 and aabb_collision( pX + self.dude.sensors.floor.x, pY + self.dude.sensors.floor.y, self.dude.sensors.floor.width, self.dude.sensors.floor.height, tX, tY, tW, tH) then
+					--print("BOT COLLISION")
+					self.dude.y = tY
+					self.dude.yspeed = 0
+					self.dude.onground = true
+				end
+				if xint < 0 and aabb_collision( pX + self.dude.sensors.left.x, pY + self.dude.sensors.left.y, self.dude.sensors.left.width, self.dude.sensors.left.height, tX, tY, tW, tH) then
+					--print("LEFT SIDE COLLISION")
+					self.dude.x = tX + ( self.dude.mask.width * 1.5 ) 
+					self.dude.xspeed = 0
+				end
+				if right_intersection < 0 and aabb_collision( pX + self.dude.sensors.right.x, pY + self.dude.sensors.right.y, self.dude.sensors.right.width, self.dude.sensors.right.height, tX, tY, tW, tH) then
+					--print("RIGHT SIDE COLLISION")
+					self.dude.x = tX - self.dude.mask.width/2
+					self.dude.xspeed = 0
+				end
+				]]
+			end
+		end
+	end
+	
+	if self.dude._prevX == self.dude.x then
+		self.dude.xspeed = 0
+	end
+	if self.dude._prevY == self.dude.y then
+		self.dude.yspeed = 0
+	end
 end
 
 function state:draw()
+	self.map:draw()
 	-- Tiles
 	for i, tile in ipairs(self.floors) do
 		love.graphics.setColor(32,32,32)
