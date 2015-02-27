@@ -47,8 +47,7 @@ local state = {}
 function state:enter(state)
 	love.graphics.setBackgroundColor(0,0,0)
 	self.map = sti.new("data/maps/00")
-	self._world = love.physics.newWorld(0,0)
-	self.mapCollisions = self.map:initWorldCollision(self._world)
+	--self.mapCollisions = self.map:initWorldCollision(self._world)
 	self.uptime = 0
 	--
 	self.floors = {}
@@ -166,7 +165,6 @@ function state:update(dt)
 	for i, tile in ipairs( self.floors ) do
 		local tX, tY, tW, tH = tile.x, tile.y, tile.width, tile.height
 		local x_dist, y_dist = tX - pX, tY - pY
-		if (math.abs(x_dist) < 64) and (math.abs(y_dist) < 128) then
 			if aabb_intersect( pX - self.dude.mask.width/2, pY - self.dude.mask.height , self.dude.mask.width, self.dude.mask.height, tX, tY, tW, tH ) then
 				local b, _x, _y = aabb_intersect( pX - self.dude.mask.width/2, pY - self.dude.mask.height , self.dude.mask.width, self.dude.mask.height, tX, tY, tW, tH )
 				self.dude._intersectX, self.dude._intersectY = _x, _y
@@ -178,9 +176,9 @@ function state:update(dt)
 						self.dude.onground = true
 					end
 					
-					self.dude.y = math.floor( self.dude.y ) + _y
+					self.dude.y = self.dude.y + _y
 				else
-					self.dude.x = math.floor( self.dude.x ) + _x
+					self.dude.x = self.dude.x + _x
 				end
 				
 				--[[
@@ -208,7 +206,6 @@ function state:update(dt)
 				]]
 			end
 		end
-	end
 	
 	if self.dude._prevX == self.dude.x then
 		self.dude.xspeed = 0
