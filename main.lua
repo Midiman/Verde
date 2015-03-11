@@ -1,4 +1,10 @@
-gamestate = require "libs.hump.gamestate"
+GameState = require "libs.hump.gamestate"
+Class = require "libs.hump.class"
+sti = require "libs.sti"
+
+Creature = require "creature"
+
+--
 
 content = {}
 content.fonts = {}
@@ -30,15 +36,13 @@ function love.load()
 	SCREEN_HEIGHT = love.graphics.getHeight()
 	--
 	love.graphics.setBackgroundColor(0,0,0)
-	love.physics.setMeter(32)
 	--
 	content.fonts["normal"] = love.graphics.newFont("data/fonts/OpenSans-Semibold.ttf",16)
 	love.graphics.setFont(content.fonts["normal"])
 	--
-	local first_start = require("states.game-test")
-	
-	gamestate.registerEvents()
-	gamestate.switch(first_start)
+	map = sti.new("data/maps/00")
+	gal1 = Creature()
+	gal1:setPosition(SCREEN_CENTER_X,SCREEN_CENTER_Y)
 end
 
 function love.mousepressed(x, y, button)
@@ -75,5 +79,10 @@ function love.quit()
 end
 
 function love.draw()
-
+	map:draw()
+	gal1:draw()
+	love.graphics.setColor(0,0,0,128)
+	love.graphics.rectangle("fill", 16,12,256,32)
+	love.graphics.setColor(255,255,255)
+	love.graphics.print( love.timer.getFPS(), 16, 12 )
 end

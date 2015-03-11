@@ -1,5 +1,5 @@
 gamestate	= require "libs.hump.gamestate"
-sti = require "libs.simple-tiled-implementation"
+sti			= require "libs.sti"
 
 function aabb_collision2(x1, y1, w1, h1, x2, y2, w2, h2)
 	if  (x1 + w1 >= x2) and (x1 <= x2 + w2) and
@@ -47,6 +47,7 @@ local state = {}
 function state:enter(state)
 	love.graphics.setBackgroundColor(0,0,0)
 	self.map = sti.new("data/maps/00")
+	self.collisions = self.map.layers["Tile Layer 1"].data
 	--self.mapCollisions = self.map:initWorldCollision(self._world)
 	self.uptime = 0
 	--
@@ -161,9 +162,11 @@ function state:update(dt)
 	--
 	self.dude.onground = false
 	self.dude.isColliding = false
+	--[[
 	local pX, pY = self.dude.x, self.dude.y
-	for i, tile in ipairs( self.floors ) do
-		local tX, tY, tW, tH = tile.x, tile.y, tile.width, tile.height
+	local tTW, tTH = self.collisions.tilewidth, self.collisions.tileheight
+	for i, tile in ipairs( self.collisions ) do
+		local tX, tY, tW, tH = tile.offset.x, tile.offset.y, tile.width, tile.height
 		local x_dist, y_dist = tX - pX, tY - pY
 			if aabb_intersect( pX - self.dude.mask.width/2, pY - self.dude.mask.height , self.dude.mask.width, self.dude.mask.height, tX, tY, tW, tH ) then
 				local b, _x, _y = aabb_intersect( pX - self.dude.mask.width/2, pY - self.dude.mask.height , self.dude.mask.width, self.dude.mask.height, tX, tY, tW, tH )
@@ -203,10 +206,9 @@ function state:update(dt)
 					self.dude.x = tX - self.dude.mask.width/2
 					self.dude.xspeed = 0
 				end
-				]]
 			end
 		end
-	
+	]]
 	if self.dude._prevX == self.dude.x then
 		self.dude.xspeed = 0
 	end
@@ -247,8 +249,8 @@ function state:draw()
 	-- Debug
 	love.graphics.setColor(255,255,255)
 	love.graphics.print( 
-    	("X:%05i (%02.2f)\nY:%05i (%02.2f)\nXSPD:%02.02f\nYSPD:%02.02f\nGrounded: %s"):format(
-    		self.dude.x, self.dude._intersectX, self.dude.y, self.dude._intersectY, self.dude.xspeed, self.dude.yspeed, self.dude.onground) , SCREEN_LEFT + 16, SCREEN_TOP + 16
+    	("X:%05i (%02.2f)\nY:%05i (%02.2f)\nXSPD:%02.02f\nYSPD:%02.02f\nGrounded: %s\n%i"):format(
+    		self.dude.x, self.dude._intersectX, self.dude.y, self.dude._intersectY, self.dude.xspeed, self.dude.yspeed, self.dude.onground,  #self.collisions) , SCREEN_LEFT + 16, SCREEN_TOP + 16
 	)
 end
 
