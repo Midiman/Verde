@@ -1,8 +1,10 @@
 GameState = require "libs.hump.gamestate"
 Class = require "libs.hump.class"
+vector = require "libs.hump.vector"
+
 sti = require "libs.sti"
 
-Creature = require "creature"
+Player = require "player"
 
 --
 
@@ -41,8 +43,12 @@ function love.load()
 	love.graphics.setFont(content.fonts["normal"])
 	--
 	map = sti.new("data/maps/00")
-	gal1 = Creature()
+	gal1 = Player()
 	gal1:setPosition(SCREEN_CENTER_X,SCREEN_CENTER_Y)
+	
+	addVelocity = vector(0,0)
+	
+	numTiles = {}
 end
 
 function love.mousepressed(x, y, button)
@@ -68,6 +74,32 @@ end
 
 function love.update(dt)
 	game.time = game.time + dt
+	
+	addVelocity.y = addVelocity.y + 9.8
+	
+	gal1:move(addVelocity * dt)
+	
+	--
+	local prevx, prevy = gal1:getPosition()
+	local x, y = prevx - 64, prevy - 64
+	numTiles = {}
+	while x < prevx + 64 do
+		while y < prevy + 64 do
+			local _x = math.ceil( x / 32 )
+			local _y = math.ceil( y / 32 )
+			
+			if map.layers["Tile Layer 1"].data[_y][_x] ~= nil then
+				numTiles[#numTiles+1] = map.layers["Tile Layer 1"].data[_x][_y]
+			end
+			x = x + 32
+			y = y + 32
+		end
+	end
+	
+	--
+	for i,t in ipairs(numTiles) do
+		print( t.offset.x )
+	end
 end
 
 function love.focus(f)
@@ -85,4 +117,6 @@ function love.draw()
 	love.graphics.rectangle("fill", 16,12,256,32)
 	love.graphics.setColor(255,255,255)
 	love.graphics.print( love.timer.getFPS(), 16, 12 )
+	love.graphics.print( #map.layers["Tile Layer 1"].data, 16, 12 + 16)
+	love.graphics.print( #numTiles, 16, 12 + 16*2)
 end
