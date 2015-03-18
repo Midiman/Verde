@@ -10,7 +10,7 @@ Player = Class {
 		self.position = Vector(x,y)
 		self.velocity = Vector(0,0)
 		self.grounded = false
-		self.bounds = Vector(32,32)
+		self.bounds = Vector(24,32)
 		self.map = nil
 		self.lastTile = Vector(0,0)
 		self.color = {255,255,255}
@@ -60,6 +60,14 @@ function Player:update(dt)
 		self.position.y = self.position.y + dy
 		self.velocity.y = 0 
 	end
+	if self.map.layers["Tile Layer 1"].data[ty][tx+2] then
+		local dy = ((ty-1) * self.map.tileheight) - self.position.y
+		local dx = ((tx) * self.map.tilewidth) - self.position.x
+		
+		self.position.x = self.position.x + dx
+		self.velocity.x = 0 
+	end
+	
 	self.color = self.grounded and {255,255,0} or {0,255,255}
 	
 	if self.grounded and love.keyboard.isDown("up") then
@@ -77,7 +85,7 @@ function Player:draw()
 	love.graphics.push()
 	love.graphics.setColor( unpack(self.color) )
 	love.graphics.rectangle("fill",
-		self.position.x, self.position.y,
+		self.position.x - self.bounds.x/2, self.position.y - self.bounds.y,
 		self.bounds.x, self.bounds.y
 	)
 	love.graphics.setColor(0,255,255)
