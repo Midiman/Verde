@@ -4,20 +4,33 @@ Vector = require "libs.hump.vector"
 Rectangle = require "rectangle"
 Creature = require "creature"
 
+require "utils/math"
+
 Player = Class {
 	__includes = Creature,
 	init = function(self, x, y)
 		self.position = Vector(x,y)
 		self.velocity = Vector(0,0)
 		self.correction = Vector(0,0)
-		self.grounded = false
 		self.bounds = Vector(32,32)
+		-- 
+		self._accelAmount = 10
+		self._decelAmount = 5
+		self._maxHorizAmount = 550
+		self._skidFactor = 3.5
+		self._minSkidAmount = 125
+		self._airAccelFactor = 0.875
+		self._jumpVelocity = -320
+		self._jumpFloatAmount = -3.5
+		--
+		self.grounded = false
 		self.map = nil
+		-- Debug
 		self.bottomTile = Vector(0,0)
 		self.rightTile = Vector(0,0)
 		self.leftTile = Vector(0,0)
 		self.topTile = Vector(0,0)
-		self.color = {255,255,255}
+		self._color = {255,255,255}
 	end
 }
 function Player:setMap( map )
@@ -51,7 +64,6 @@ function Player:update(dt)
 		self.velocity.y = self.velocity.y + GRAVITY
 	end
 	self:move( self.velocity * dt)
-	self.velocity.x = 0
 	local x, y = self.position:unpack()
 	
 	local bx, by = self.map:convertScreenToTile(x, y)
@@ -118,23 +130,51 @@ function Player:update(dt)
 		self.velocity.x = 0
 	end
 	
-	self.color = self.grounded and {255,255,0} or {0,255,255}
+	self._color = self.grounded and {255,255,0} or {0,255,255}
 	
-	if self.grounded and love.keyboard.isDown("up") then
-		self.velocity.y = -GRAVITY * self.map.tileheight
+	if love.keyboard.isDown("up") then
+		if self.grounded then
+			self.velocity.y = self._jumpVelocity
+		else
+			self.velocity.y = self.velocity.y + self._jumpFloatAmount
+		end
 	end
+	
 	if love.keyboard.isDown("left") then
-		self.velocity.x = -128
+		if self.grounded and self.velocity.x >= self._minSkidAmount then 
+			self.velocity.x = self.velocity.x - self._accelAmount * self._skidFactor
+		elseif self.grounded then 
+			self.velocity.x = self.velocity.x - self._accelAmount
+		else
+			self.velocity.x = self.velocity.x - self._accelAmount * self._airAccelFactor
+		end
+	elseif love.keyboard.isDown("right") then
+		if self.grounded and self.velocity.x <= -self._minSkidAmount then 
+			self.velocity.x = self.velocity.x + self._accelAmount * self._skidFactor
+		elseif self.grounded then 
+			self.velocity.x = self.velocity.x + self._accelAmount
+		else
+			self.velocity.x = self.velocity.x + self._accelAmount * self._airAccelFactor
+		end
+	else
+		if self.velocity.x > 0 and self.grounded then
+			self.velocity.x = self.velocity.x - self._decelAmount
+		end
+		if self.velocity.x < 0 and self.grounded then
+			self.velocity.x = self.velocity.x + self._decelAmount
+		end
+		if self.velocity.x >= -self._decelAmount and self.velocity.x <= self._decelAmount and self.grounded then
+			self.velocity.x = 0
+		end
 	end
-	if love.keyboard.isDown("right") then
-		self.velocity.x = 128
-	end
+	
+	self.velocity.x = math.clamp(self.velocity.x, -self._maxHorizAmount, self._maxHorizAmount)
 end
 
 function Player:draw()
 	love.graphics.push()
 	-- Player Mask
-	love.graphics.setColor( unpack(self.color) )
+	love.graphics.setColor( unpack(self._color) )
 	love.graphics.rectangle("fill",
 		self.position.x - self.bounds.x/2, self.position.y - self.bounds.y,
 		self.bounds.x, self.bounds.y
