@@ -15,7 +15,7 @@ game = {}
 game.time = 0
 game.focused = nil
 
-GRAVITY = 9.80665
+GRAVITY = 9.8
 
 SCREEN_LEFT = nil
 SCREEN_RIGHT = nil
@@ -94,4 +94,5 @@ function love.draw()
 	love.graphics.setColor(255,255,255)
 	love.graphics.print( love.timer.getFPS(), 16, 12 )
 	love.graphics.print( string.format("%0.2f,%0.2f", gal1:getVelocity() ), 16, 12 + 16)
+	love.graphics.print( string.format("%0.2f,%0.2f", gal1:getCorrection() ), 16, 12 + 16*2)
 end
