@@ -11,6 +11,8 @@ Player = Class {
 	init = function(self, x, y)
 		self.position = Vector(x,y)
 		self.velocity = Vector(0,0)
+		self.grounded = false
+		self.canWalljump = false
 		self.correction = Vector(0,0)
 		self.bounds = Vector(24,32)
 		-- 
@@ -24,8 +26,6 @@ Player = Class {
 		self._jumpFloatAmount = -3.5
 		self._direction = 1
 		--
-		self.grounded = false
-		self.canWalljump = false
 		self.map = nil
 		-- Debug
 		self.bottomTile = Vector(0,0)
