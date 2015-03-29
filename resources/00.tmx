@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.0" orientation="orthogonal" renderorder="right-down" width="100" height="100" tilewidth="32" tileheight="32" nextobjectid="4">
+ <tileset firstgid="1" name="collisions" tilewidth="32" tileheight="32">
+  <image source="../data/maps/00.png" width="512" height="512"/>
+ </tileset>
+ <layer name="Tile Layer 1" width="100" height="100">
+  <data encoding="base64" compression="zlib">
+   eJzt1jsKwCAQQMGV3P/OKVMkBj8kLjIDdmKxD9QSEaVh1fTu511LCz3+o0cusz1q5zBGjz3pkYseueixzhHXzP2v1nmauR7srPW/27sYo0cuegAw64u731syx/wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA4O4Eh9cAsw==
+  </data>
+ </layer>
+ <objectgroup name="game_entities">
+  <object id="2" name="PlayerStart" x="95" y="319"/>
+ </objectgroup>
+</map>

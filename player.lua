@@ -12,18 +12,20 @@ Player = Class {
 		self.position = Vector(x,y)
 		self.velocity = Vector(0,0)
 		self.correction = Vector(0,0)
-		self.bounds = Vector(32,32)
+		self.bounds = Vector(24,32)
 		-- 
-		self._accelAmount = 10
-		self._decelAmount = 5
+		self._accelAmount = 14
+		self._decelAmount = 8
 		self._maxHorizAmount = 550
 		self._skidFactor = 3.5
 		self._minSkidAmount = 125
 		self._airAccelFactor = 0.875
 		self._jumpVelocity = -320
 		self._jumpFloatAmount = -3.5
+		self._direction = 1
 		--
 		self.grounded = false
+		self.canWalljump = false
 		self.map = nil
 		-- Debug
 		self.bottomTile = Vector(0,0)
@@ -65,6 +67,7 @@ function Player:update(dt)
 	end
 	self:move( self.velocity * dt)
 	local x, y = self.position:unpack()
+	self.canWallJump = false
 	
 	local bx, by = self.map:convertScreenToTile(x, y)
 	bottom_x = math.floor(bx)
@@ -131,6 +134,8 @@ function Player:update(dt)
 	end
 	
 	self._color = self.grounded and {255,255,0} or {0,255,255}
+		
+	self._direction = self.velocity.x >= 0 and 1 or -1
 	
 	if love.keyboard.isDown("up") then
 		if self.grounded then
@@ -167,6 +172,7 @@ function Player:update(dt)
 			self.velocity.x = 0
 		end
 	end
+ 
 	
 	self.velocity.x = math.clamp(self.velocity.x, -self._maxHorizAmount, self._maxHorizAmount)
 end
