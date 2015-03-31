@@ -32,6 +32,7 @@ Player = Class {
 		self.rightTile = Vector(0,0)
 		self.leftTile = Vector(0,0)
 		self.topTile = Vector(0,0)
+		self._lastTileKind = 0
 		self._color = {255,255,255}
 	end
 }
@@ -57,6 +58,11 @@ end
 function Player:getCorrection()
 	return self.correction:unpack()
 end
+
+function Player:getTileKind()
+	return self._lastTileKind
+end
+
 function Player:onCollision(entity, dx, dy)
 
 end
@@ -107,6 +113,7 @@ function Player:update(dt)
 		local dy = ((bottom_y) * self.map.tileheight) - self.position.y
 		
 		self.correction.y = dy
+		self._lastTileKind = self.map.layers["Tile Layer 1"].data[bottom_y+1][bottom_x+1].gid
 
 		self.grounded = true
 		self.position.y = self.position.y + dy
