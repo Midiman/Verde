@@ -59,6 +59,10 @@ function Player:getCorrection()
 	return self.correction:unpack()
 end
 
+function Player:getDirection()
+	return self._direction
+end
+
 function Player:getTileKind()
 	return self._lastTileKind
 end
@@ -74,6 +78,8 @@ function Player:update(dt)
 	self:move( self.velocity * dt)
 	local x, y = self.position:unpack()
 	self.canWallJump = false
+	if self.velocity.x > 10 then self._direction = 1 end
+	if self.velocity.x < -10 then self._direction = -1 end
 	
 	local bx, by = self.map:convertScreenToTile(x, y)
 	bottom_x = math.floor(bx)
@@ -96,6 +102,7 @@ function Player:update(dt)
 	self.leftTile = Vector(left_x, left_y)
 	self.topTile = Vector(top_x, top_y)
 	self.grounded = false
+	self.canWallJump = false
 	
 	-- Top
 	if self.map.layers["Tile Layer 1"].data[top_y+1][top_x+1] then
@@ -125,6 +132,8 @@ function Player:update(dt)
 		local tile_offset = self.map.tilewidth
 		local dx = ((left_x) * self.map.tilewidth) + tile_offset - ( self.position.x - self.bounds.x/2)
 		
+		self.canWallJump = true
+		
 		self.correction.x = dx
 		
 		self.position.x = ( self.position.x ) + dx
@@ -133,6 +142,8 @@ function Player:update(dt)
 	-- Right
 	if self.map.layers["Tile Layer 1"].data[right_y+1][right_x+1] then
 		local dx = ((right_x) * self.map.tilewidth) - ( self.position.x + self.bounds.x/2)
+		
+		self.canWallJump = true
 		
 		self.correction.x = dx
 		
@@ -147,6 +158,9 @@ function Player:update(dt)
 	if love.keyboard.isDown("up") then
 		if self.grounded then
 			self.velocity.y = self._jumpVelocity
+		elseif self.canWallJump then
+			self.velocity.y = self._jumpVelocity * 0.25
+			self.velocity.x = 150 * self._direction
 		else
 			self.velocity.y = self.velocity.y + self._jumpFloatAmount
 		end

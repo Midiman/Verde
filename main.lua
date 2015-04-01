@@ -96,4 +96,5 @@ function love.draw()
 	love.graphics.print( string.format("%0.2f,%0.2f", gal1:getVelocity() ), 16, 12 + 16)
 	love.graphics.print( string.format("%0.2f,%0.2f", gal1:getCorrection() ), 16, 12 + 16*2)
 	love.graphics.print( string.format("%i", gal1:getTileKind() ), 16, 12 + 16*3)
+	love.graphics.print( string.format("%i", gal1:getDirection() ), 16, 12 + 16*4)
 end
