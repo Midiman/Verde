@@ -10,10 +10,11 @@ Player = Class {
 	__includes = Creature,
 	init = function(self, x, y)
 		self.position = Vector(x,y)
+		self.groundSpeed = Vector(0,0)
 		self.velocity = Vector(0,0)
+		self.movementAngle = 0
 		self.grounded = false
 		self.canWalljump = false
-		self.correction = Vector(0,0)
 		self.bounds = Vector(24,32)
 		-- 
 		self._accelAmount = 14
@@ -27,11 +28,12 @@ Player = Class {
 		self._direction = 1
 		--
 		self.map = nil
-		-- Debug
 		self.bottomTile = Vector(0,0)
 		self.rightTile = Vector(0,0)
 		self.leftTile = Vector(0,0)
 		self.topTile = Vector(0,0)
+		--
+		self.correction = Vector(0,0)
 		self._lastTileKind = 0
 		self._color = {255,255,255}
 	end
@@ -71,6 +73,11 @@ function Player:onCollision(entity, dx, dy)
 
 end
 
+function Player:moveRotated()
+	local x, y = self.velocity
+	
+end
+
 function Player:update(dt)
 	if not self.grounded then
 		self.velocity.y = self.velocity.y + GRAVITY
@@ -82,7 +89,7 @@ function Player:update(dt)
 	if self.velocity.x < -10 then self._direction = -1 end
 	
 	local bx, by = self.map:convertScreenToTile(x, y)
-	bottom_x = math.floor(bx)
+	bottom_x = math.max(0,math.floor(bx))
 	bottom_y = math.floor(by)
 	
 	rx, ry = self.map:convertScreenToTile(x + self.bounds.x/2, y - self.bounds.y/2)
@@ -90,8 +97,8 @@ function Player:update(dt)
 	right_y = math.floor(ry)
 	
 	lx, ly = self.map:convertScreenToTile(x - self.bounds.x/2, y - self.bounds.y/2)
-	left_x = math.floor(lx)
-	left_y = math.floor(ly)
+	left_x = math.max(0,math.floor(lx))
+	left_y = math.max(0,math.floor(ly))
 	
 	tx, ty = self.map:convertScreenToTile(x, y - self.bounds.y)
 	top_x = math.floor(tx)
@@ -103,6 +110,8 @@ function Player:update(dt)
 	self.topTile = Vector(top_x, top_y)
 	self.grounded = false
 	self.canWallJump = false
+	local _collidingRight = false
+	local _collidingLeft = false
 	
 	-- Top
 	if self.map.layers["Tile Layer 1"].data[top_y+1][top_x+1] then
@@ -133,6 +142,7 @@ function Player:update(dt)
 		local dx = ((left_x) * self.map.tilewidth) + tile_offset - ( self.position.x - self.bounds.x/2)
 		
 		self.canWallJump = true
+		_collidingRight = true
 		
 		self.correction.x = dx
 		
@@ -144,6 +154,7 @@ function Player:update(dt)
 		local dx = ((right_x) * self.map.tilewidth) - ( self.position.x + self.bounds.x/2)
 		
 		self.canWallJump = true
+		_collidingLeft = true
 		
 		self.correction.x = dx
 		
@@ -159,8 +170,13 @@ function Player:update(dt)
 		if self.grounded then
 			self.velocity.y = self._jumpVelocity
 		elseif self.canWallJump then
-			self.velocity.y = self._jumpVelocity * 0.25
-			self.velocity.x = 150 * self._direction
+			local _direction = 0
+			if love.keyboard.isDown("left") then _direction = 1 end
+			if love.keyboard.isDown("right") then _direction = -1 end
+			if _direction ~= 0 and ( _collidingRight == true or _collidingLeft == true) then
+				self.velocity.y = -125 + self._jumpVelocity * 0.25
+				self.velocity.x = 200 * _direction
+			end
 		else
 			self.velocity.y = self.velocity.y + self._jumpFloatAmount
 		end
