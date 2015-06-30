@@ -85,8 +85,9 @@ function Player:update(dt)
 	self:move( self.velocity * dt)
 	local x, y = self.position:unpack()
 	self.canWallJump = false
-	if self.velocity.x > 10 then self._direction = 1 end
-	if self.velocity.x < -10 then self._direction = -1 end
+
+	if self.velocity.x > 1 then self._direction = 1 end
+	if self.velocity.x < -1 then self._direction = -1 end
 	
 	local bx, by = self.map:convertScreenToTile(x, y)
 	bottom_x = math.max(0,math.floor(bx))

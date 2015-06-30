@@ -2,8 +2,7 @@ GameState = require "libs.hump.gamestate"
 Class = require "libs.hump.class"
 vector = require "libs.hump.vector"
 
-sti = require "libs.sti"
-
+Map = require "map"
 Player = require "player"
 
 --
@@ -42,9 +41,9 @@ function love.load()
 	content.fonts["normal"] = love.graphics.newFont("data/fonts/OpenSans-Semibold.ttf",16)
 	love.graphics.setFont(content.fonts["normal"])
 	--
-	map = sti.new("data/maps/00")
+	map = Map("data/maps/00")
 	gal1 = Player()
-	gal1:setMap( map )
+	gal1:setMap( map:GetMap() )
 	gal1:setPosition(480,SCREEN_CENTER_Y)
 
 	addVelocity = vector(0,0)
